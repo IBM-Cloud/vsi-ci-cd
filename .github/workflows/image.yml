@@ -33,4 +33,7 @@ jobs:
       - name: Run a multi-line script
         run: |
           echo Add other actions to build,
+          pwd
+          env
+          ls -lisa
           echo test, and deploy your project.
