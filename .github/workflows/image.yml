@@ -47,6 +47,12 @@ jobs:
           echo test, and deploy your project.
 
       # validate templates
+      - name: packer init
+        uses: hashicorp/packer-github-actions@master
+        with:
+          command: init
+
+      # validate templates
       - name: Validate Template
         uses: hashicorp/packer-github-actions@master
         with:
