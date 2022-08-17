@@ -14,15 +14,13 @@ on:
   workflow_dispatch:
 
 env:
-  PKR_VAR_subnet_id: "0717-9d7a0b1c-d7a9-43a6-8b12-df5d2dfed5f7"
   PKR_VAR_resource_group_id: "b2992b521512437185e150fce204413d"
-  PKR_VAR_region: "us-south"
   PKR_VAR_subnet_id: 0717-9d7a0b1c-d7a9-43a6-8b12-df5d2dfed5f7
   PKR_VAR_vsi_base_image_name: ibm-ubuntu-22-04-minimal-amd64-1
   PKR_VAR_vsi_profile: bx2-2x8
   PKR_VAR_vsi_interface: public
   PKR_VAR_region: us-south
-  PKR_VAR_ibm_api_key: ${{ secrets.PKR_VAR_ibm_api_key }}
+  PKR_VAR_ibm_api_key: ${{ secrets.PKR_VAR_IBM_API_KEY }}
 # A workflow run is made up of one or more jobs that can run sequentially or in parallel
 jobs:
   # This workflow contains a single job called "build"
