@@ -18,12 +18,12 @@ variable "vsi_base_image_name" {
 
 locals {
   timestamp = regex_replace(timestamp(), "[- TZ:]", "")
-  // version = "1-2-4"
-  version    = "1-${local.timestamp}"
+  version = "1-0-11"
   image_name = "packer-${local.version}"
 }
 
 /*
+todo
 removed from ibmcloud-vpc
   security_group_id = ""
   // vsi_base_image_id = "r026-4e9a4dcc-15c7-4fac-b6ea-e24619059218"
@@ -57,10 +57,25 @@ build {
 
   provisioner "shell" {
     inline = [
-      "echo '${local.version}' >> /hello.txt",
+      "set -x",
+      "echo '@reboot echo ${local.version} $(hostname) $(hostname -I) > /var/www/html/index.html' | crontab",
+      "crontab -l",
+      "export DEBIAN_FRONTEND=noninteractive",
+      "apt -qq -y update < /dev/null",
+      "sleep 10",
+      "apt -qq -y update < /dev/null",
+      "apt -qq -y install nginx < /dev/null",
       "sync;sync",
     ]
   }
+  
+  post-processor "shell-local" {
+    inline = [
+      "echo foo",
+      "echo bar",
+      ]
+  }
+
   post-processor "manifest" {
     strip_path = true
     custom_data = {
