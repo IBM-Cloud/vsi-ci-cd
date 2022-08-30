@@ -1,5 +1,8 @@
-# ibm packer test
+# vsi-ci-cd
 Create an image using packer.  Quick test of the image (optional).  Deploy image to production autoscale.
+
+Companion repository to the blog post: URL
+
 
 # Do it
 Create your local.env file
@@ -37,3 +40,6 @@ roll.sh the instance_template is initialized with the new image so the new insta
 load_balancer=$(terraform output -state vpc_autoscale_tf/terraform.tfstate -raw load_balancer_hostname)
 while sleep 1; do curl $load_balancer; done
 ```
+
+# make clean
+Clean up all of the resources
