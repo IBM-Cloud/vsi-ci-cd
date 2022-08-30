@@ -1,7 +1,13 @@
-variable "ibmcloud_api_key" {
-  description = "Your IBM Cloud IAM API key"
-  default     = ""
-}
+/*
+Process to change image for a software roll out:
+current = set to the next value 1 or 0
+image_name_0 and image_name_1 = change the new current one appropriately.  Keep the other one the same
+
+these are set in apply.sh and destroy.sh
+*/
+variable "current" {}
+variable "image_name_0" {}
+variable "image_name_1" {}
 
 variable "ibmcloud_timeout" {
   description = "Timeout for API operations in seconds."
@@ -10,23 +16,17 @@ variable "ibmcloud_timeout" {
 
 variable "resource_group_name" {
   description = "Your resource group name"
-  default     = ""
 }
 
-variable "vpc_name" {
-  description = "Unique name to your VPC"
-}
-
-variable "basename" {
+variable "prefix" {
   description = "Prefix used for all resource names"
 }
 
 variable "region" {
   description = "The region in which you want to provision your VPC and its resources"
-  default     = "us-south"
 }
 
-variable "ssh_keyname" {
+variable "ssh_key_name" {
   description = "Name of the SSH key to use"
 }
 

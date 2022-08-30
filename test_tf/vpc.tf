@@ -9,7 +9,7 @@ data "ibm_is_image" "name" {
 }
 
 locals {
-  prefix  = "${var.prefix}-prod"
+  prefix  = "${var.prefix}-packertest"
   profile = "cx2-2x4"
 }
 resource "ibm_is_vpc" "packer" {
@@ -35,7 +35,7 @@ resource "ibm_is_subnet" "zone" {
 
 resource "ibm_is_subnet_reserved_ip" "instance" {
   subnet = ibm_is_subnet.zone.id
-  name   = "reserved-ip-for-instance"
+  name            = local.prefix
   // address = replace(ibm_is_subnet.zone.ipv4_cidr_block, "0/24", "7")
 }
 

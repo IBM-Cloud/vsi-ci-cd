@@ -7,6 +7,7 @@ packer {
   }
 }
 
+variable "prefix" {}
 variable "ibm_api_key" {}
 variable "region" {}
 variable "subnet_id" {}
@@ -18,20 +19,11 @@ variable "vsi_base_image_name" {
 
 locals {
   timestamp = regex_replace(timestamp(), "[- TZ:]", "")
-  version = "1-0-11"
-  image_name = "packer-${local.version}"
+  # version = "1-0-11"
+  version = local.timestamp
+  image_name = "${var.prefix}-${local.version}"
 }
 
-/*
-todo
-removed from ibmcloud-vpc
-  security_group_id = ""
-  // vsi_base_image_id = "r026-4e9a4dcc-15c7-4fac-b6ea-e24619059218"
-  vsi_user_data_file  = ""
-  vsi_interface       = "public"
-
-    execute_command = "{{.Vars}} bash '{{.Path}}'"
-*/
 source "ibmcloud-vpc" "ubuntu" {
   timeout = "30m"
   api_key = var.ibm_api_key

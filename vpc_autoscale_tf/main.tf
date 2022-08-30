@@ -1,40 +1,32 @@
 /*
-Process to change instance
-change the image name in next.  Change the count
+see variables.tf
 */
 locals {
-  current = 1
-  next = 1 - local.current
+  name    = "${var.prefix}-prod"
+  current = var.current
+  next    = 1 - local.current
   state = {
     0 = {
-      image_id =  data.ibm_is_image.i0.id
-    }, 
+      image_id   = data.ibm_is_image.i0.id
+      image_name = data.ibm_is_image.i0.name
+    },
     1 = {
-      image_id =  data.ibm_is_image.i1.id
+      image_id   = data.ibm_is_image.i1.id
+      image_name = data.ibm_is_image.i1.name
     }
-
   }
 }
 
 data "ibm_is_image" "i0" {
-  // name = "packer-1-20220817172325"
-  name = "packer-1-0-9"
+  name = var.image_name_0
 }
 
 data "ibm_is_image" "i1" {
-  // name = "ibm-ubuntu-18-04-1-minimal-amd64-2"
-  name = "packer-1-0-6"
-}
-
-output current {
-  value = {
-    current = local.current
-    next = local.next
-  }
+  name = var.image_name_1
 }
 
 data "ibm_is_ssh_key" "sshkey" {
-  name = var.ssh_keyname
+  name = var.ssh_key_name
 }
 
 data "ibm_resource_group" "group" {
@@ -42,13 +34,13 @@ data "ibm_resource_group" "group" {
 }
 
 resource "ibm_is_vpc" "vpc" {
-  name           = var.vpc_name
+  name           = local.name
   resource_group = data.ibm_resource_group.group.id
 }
 
 resource "ibm_is_subnet" "subnet" {
   count                    = 2
-  name                     = "${var.vpc_name}-subnet-${count.index + 1}"
+  name                     = "${local.name}-${count.index + 1}"
   vpc                      = ibm_is_vpc.vpc.id
   zone                     = "${var.region}-${count.index + 1}"
   resource_group           = data.ibm_resource_group.group.id
@@ -56,19 +48,19 @@ resource "ibm_is_subnet" "subnet" {
 }
 
 resource "ibm_is_security_group" "autoscale_security_group" {
-  name           = "${var.basename}-autoscale-sg"
+  name           = "${local.name}-autoscale-sg"
   vpc            = ibm_is_vpc.vpc.id
   resource_group = data.ibm_resource_group.group.id
 }
 
 resource "ibm_is_security_group" "maintenance_security_group" {
-  name           = "${var.basename}-maintenance-sg"
+  name           = "${local.name}-maintenance-sg"
   vpc            = ibm_is_vpc.vpc.id
   resource_group = data.ibm_resource_group.group.id
 }
 
 resource "ibm_is_security_group" "lb_security_group" {
-  name           = "${var.basename}-lb-sg"
+  name           = "${local.name}-lb-sg"
   vpc            = ibm_is_vpc.vpc.id
   resource_group = data.ibm_resource_group.group.id
 }
@@ -214,7 +206,7 @@ resource "ibm_is_security_group_rule" "lb_security_group_rule_tcp_443_outbound" 
 }
 
 resource "ibm_is_lb" "lb" {
-  name            = "${var.vpc_name}-lb"
+  name            = "${local.name}-lb"
   subnets         = ibm_is_subnet.subnet.*.id
   resource_group  = data.ibm_resource_group.group.id
   security_groups = [ibm_is_security_group.lb_security_group.id]
@@ -222,7 +214,7 @@ resource "ibm_is_lb" "lb" {
 
 resource "ibm_is_lb_pool" "lb-pool" {
   lb                 = ibm_is_lb.lb.id
-  name               = "${var.vpc_name}-lb-pool"
+  name               = "${local.name}-lb-pool"
   protocol           = var.enable_end_to_end_encryption ? "https" : "http"
   algorithm          = "round_robin"
   health_delay       = "15"
@@ -230,7 +222,7 @@ resource "ibm_is_lb_pool" "lb-pool" {
   health_timeout     = "5"
   health_type        = var.enable_end_to_end_encryption ? "https" : "http"
   health_monitor_url = "/"
-  depends_on = [time_sleep.wait_30_seconds]
+  depends_on         = [time_sleep.wait_30_seconds]
 }
 
 resource "ibm_is_lb_listener" "lb-listener" {
@@ -242,8 +234,8 @@ resource "ibm_is_lb_listener" "lb-listener" {
 }
 
 resource "ibm_is_instance_template" "instance_template" {
-  count = 2
-  name           = "${var.basename}-${count.index}"
+  count          = 2
+  name           = "${local.name}-${count.index}"
   image          = local.state[count.index].image_id
   profile        = "cx2-2x4"
   resource_group = data.ibm_resource_group.group.id
@@ -253,14 +245,14 @@ resource "ibm_is_instance_template" "instance_template" {
     security_groups = [ibm_is_security_group.autoscale_security_group.id, ibm_is_security_group.maintenance_security_group.id]
   }
 
-  vpc       = ibm_is_vpc.vpc.id
-  zone      = "${var.region}-1"
-  keys      = [data.ibm_is_ssh_key.sshkey.id]
+  vpc  = ibm_is_vpc.vpc.id
+  zone = "${var.region}-1"
+  keys = [data.ibm_is_ssh_key.sshkey.id]
   // user_data = var.enable_end_to_end_encryption ? file("./scripts/install-software-ssl.sh") : file("./scripts/install-software.sh")
 }
 
 resource "ibm_is_instance_group" "instance_group" {
-  name               = "${var.basename}-instance-group"
+  name               = "${local.name}-instance-group"
   instance_template  = ibm_is_instance_template.instance_template[local.current].id
   instance_count     = 2
   subnets            = ibm_is_subnet.subnet.*.id
@@ -273,7 +265,7 @@ resource "ibm_is_instance_group" "instance_group" {
 }
 
 resource "ibm_is_instance_group_manager" "instance_group_manager" {
-  name                 = "${var.basename}-instance-group-manager"
+  name                 = "${local.name}-instance-group-manager"
   aggregation_window   = 90
   instance_group       = ibm_is_instance_group.instance_group.id
   cooldown             = 120
@@ -289,7 +281,7 @@ resource "ibm_is_instance_group_manager_policy" "cpuPolicy" {
   metric_type            = "cpu"
   metric_value           = 10
   policy_type            = "target"
-  name                   = "${var.basename}-instance-group-manager-policy"
+  name                   = "${local.name}-instance-group-manager-policy"
 }
 
 resource "time_sleep" "wait_30_seconds" {
@@ -299,6 +291,21 @@ resource "time_sleep" "wait_30_seconds" {
 }
 
 
-output "LOAD_BALANCER_HOSTNAME" {
+output "load_balancer_hostname" {
   value = ibm_is_lb.lb.hostname
+}
+
+output "instance_group_id" {
+  value = ibm_is_instance_group.instance_group.id
+}
+
+output "current" {
+  value = {
+    current            = local.current
+    next               = local.next
+    image_id_current   = local.state[local.current].image_id
+    image_name_current = local.state[local.current].image_name
+    image_id_next      = local.state[local.next].image_id
+    image_name_next    = local.state[local.next].image_name
+  }
 }
