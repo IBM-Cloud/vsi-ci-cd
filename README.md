@@ -5,16 +5,27 @@ Companion repository to the blog post: URL
 
 ![image](https://user-images.githubusercontent.com/6932057/187541652-c3bb54b6-6471-44e5-a27a-2250e2c1f35a.png)
 
-
 # Create the resources
 
 ## Prerequisites 
-Permissions to create resources, including VPC and instances, Transit Gateway, etc.
+Permissions to create resources, including VPC, instances, etc.
 - VPC SSH key
-- [Shell with ibmcloud cli, terraform, jq and git](https://cloud.ibm.com/docs/solution-tutorials?topic=solution-tutorials-tutorials)
 
-Create your local.env file
+- Use the [IBM Cloud Shell](https://cloud.ibm.com/shell) or make sure you have [Shell with ibmcloud cli, terraform, jq and git](https://cloud.ibm.com/docs/solution-tutorials?topic=solution-tutorials-tutorials)
+
+
+[Packer](https://www.packer.io/downloads) must be installed. In the IBM Cloud Shell you can do the following:
 ```
+wget https://releases.hashicorp.com/packer/1.8.3/packer_1.8.3_linux_amd64.zip
+unzip packer_1.8.3_linux_amd64.zip
+PATH=`pwd`:$PATH
+tfswitch; # choose 1.2.8
+```
+
+## Configure and create
+```
+git clone https://github.com/IBM-Cloud/vsi-ci-cd
+cd vsi-ci-cd
 cp template.local.env local.env
 edit local.env
 make
@@ -33,6 +44,7 @@ The make script will perform the following steps:
 1. test - Deploys the new image on an instance to a test VPC, you can ssh into the instance and look around
 1. prod - Deploys the new image onto production vpc in an instance group
 
+The next sections describe each target
 
 # make vpc
 Invoke terraform in the image_tf directory to create a vpc and subnet for packer
