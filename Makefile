@@ -18,23 +18,23 @@ clean_vpc:
 
 # image with packer
 image:
-	source ./sourceenv.sh; env | grep PKR_VAR_; packer init .; packer build -machine-readable .
+	source ./sourceenv.sh; packer init .; packer build -machine-readable .
 
 # test image, ssh to the image if you want to check it out
 test:
-	source ./sourceenv.sh; env | grep TF_VAR_; cd test_tf; terraform init; terraform fmt; terraform apply -auto-approve
+	source ./sourceenv.sh; cd test_tf; terraform init; terraform fmt; terraform apply -auto-approve
 
 clean_test:
-	source ./sourceenv.sh; env | grep TF_VAR_; cd test_tf; terraform init; terraform fmt; terraform destroy -auto-approve
+	source ./sourceenv.sh; cd test_tf; terraform init; terraform fmt; terraform destroy -auto-approve
 
 # roll out to an instance group in production ---------------
 prod: prod_apply prod_roll
 
 prod_apply:
-	source ./sourceenv.sh; env | grep TF_VAR_; cd vpc_autoscale_tf; ./apply.sh
+	source ./sourceenv.sh; cd vpc_autoscale_tf; ./apply.sh
 
 prod_roll:
-	source ./sourceenv.sh; env | grep TF_VAR_; cd vpc_autoscale_tf; ./roll.sh
+	source ./sourceenv.sh; cd vpc_autoscale_tf; ./roll.sh
 
 clean_prod:
-	source ./sourceenv.sh; env | grep TF_VAR_; cd vpc_autoscale_tf; ./destroy.sh
+	source ./sourceenv.sh; cd vpc_autoscale_tf; ./destroy.sh

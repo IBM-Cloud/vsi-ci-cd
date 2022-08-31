@@ -35,7 +35,7 @@ resource "ibm_is_subnet" "zone" {
 
 resource "ibm_is_subnet_reserved_ip" "instance" {
   subnet = ibm_is_subnet.zone.id
-  name            = local.prefix
+  name   = local.prefix
   // address = replace(ibm_is_subnet.zone.ipv4_cidr_block, "0/24", "7")
 }
 

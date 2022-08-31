@@ -1,5 +1,5 @@
 #!/bin/bash
-set -ex
+set -e
 
 # Expect the following variable name to be set
 # TF_VAR_image_name=packer-20220829203907
