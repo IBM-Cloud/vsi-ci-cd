@@ -46,6 +46,8 @@ Build image, deploy to simple and autoscale.
 make
 ```
 
+See `make clean` below to remove up all the resources.
+
 ## Test via curl
 Find the public ip address of the simple instance and curl:
 ```
@@ -108,4 +110,4 @@ Steps:
 This will create a new image and provision.  Use the **Test via curl** scripts above in a different terminal sessions to watch it change over.  You can transfer the public_ip and load_balancer shell variables to your desktop.
 
 # make clean
-Clean up all of the resources
+Clean up all of the resources.
