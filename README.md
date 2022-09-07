@@ -72,7 +72,7 @@ make autoscale_curl
 # make
 The default make target executed above is **all** and it perform the following steps:
 1. vpc - Create a new subnet for use by packer (creates a new  VPC as well)
-1. image - Exeuctes packer to create a new image
+1. image - Executes packer to create a new image
 1. simple - Deploys the new image on an instance to a simple VPC, you can ssh into the instance and look around
 1. autoscale - Deploys the new image onto production vpc in an instance group
 
