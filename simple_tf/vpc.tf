@@ -1,17 +1,45 @@
-# todo names of resources is off
+data "ibm_is_images" "images" {
+  visibility = "private"
+}
+
+data "ibm_resource_tag" "image_tag" {
+  for_each = { for image in data.ibm_is_images.images.images : image.id => image.crn }
+
+  resource_id = each.value
+}
+
+locals {
+  tag_name = "${var.prefix}-stage"
+  all_images = [for image in data.ibm_is_images.images.images : {
+    id : image.id,
+    name : image.name
+    crn : image.crn
+    tags : data.ibm_resource_tag.image_tag[image.id].tags
+  }]
+  all_tagged_images        = [for image in local.all_images : image if contains(image.tags, local.tag_name)]
+  all_tagged_images_length = length(local.all_tagged_images)
+  image_id                 = local.all_tagged_images[0].id
+  image_name               = local.all_tagged_images[0].name
+  prefix                   = "${var.prefix}-packertest"
+  profile                  = "cx2-2x4"
+}
+
+// image that was tagged, verify there was only one tagged image
+output "the_one_tagged_image" {
+  value = {
+    id   = local.image_id
+    name = local.image_name
+  }
+  precondition {
+    condition     = local.all_tagged_images_length == 1
+    error_message = "the must be exactly 1 tagged image"
+  }
+}
 
 data "ibm_is_ssh_key" "ssh_key" {
   name = var.ssh_key_name
 }
 
-data "ibm_is_image" "name" {
-  name = var.image_name
-}
-
-locals {
-  prefix  = "${var.prefix}-packertest"
-  profile = "cx2-2x4"
-}
 resource "ibm_is_vpc" "packer" {
   name                      = local.prefix
   resource_group            = local.resource_group
@@ -55,11 +83,9 @@ resource "ibm_is_security_group_rule" "test_outbound_all" {
   direction = "outbound"
 }
 
-
-
 resource "ibm_is_instance" "test" {
   name           = local.prefix
-  image          = data.ibm_is_image.name.id
+  image          = local.image_id
   profile        = local.profile
   vpc            = ibm_is_vpc.packer.id
   zone           = ibm_is_subnet.zone.zone
@@ -85,4 +111,7 @@ output "test" {
   ssh root@${ibm_is_floating_ip.zone.address}
   ${ibm_is_instance.test.primary_network_interface[0].primary_ipv4_address} ${ibm_is_instance.test.name}
   EOT
+}
+output "public_ip" {
+  value = ibm_is_floating_ip.zone.address
 }

@@ -1,40 +1,44 @@
 # make everything
-all: vpc image test_tf prod
+all: vpc image tag simple autoscale
 
-test: image test_tf
-
-# make image then roll out to production
-rollout: image prod
+# make image then roll out to simple and autoscale
+rollout: image tag simple autoscale
 
 # clean everything but the images
-clean: clean_prod clean_test clean_vpc
+clean: autoscale_clean simple_clean vpc_clean images_clean
 
 # vpc for making an image ---------------
 vpc:
 	source ./local.env; cd image_tf; terraform init; terraform apply -auto-approve
 
-clean_vpc:
+vpc_clean:
 	source ./local.env; cd image_tf; terraform init; terraform destroy -auto-approve
 
 # image with packer
 image:
-	source ./sourceenv.sh; packer init .; packer build -machine-readable .
+	source ./sourcepacker.sh; packer init .; packer build -machine-readable .
+tag:
+	source local.env ; source ./sourceimage.sh; ./image-move-tag.sh $$TF_VAR_prefix-stage $$TF_VAR_image_name
+images_clean:
+	source local.env; ./images-delete.sh
 
-# test image, ssh to the image if you want to check it out
-test:
-	source ./sourceenv.sh; cd test_tf; terraform init; terraform fmt; terraform apply -auto-approve
+# simple instance in a vpc ------------------------
+simple:
+	source ./local.env; source ./sourceimage.sh; cd simple_tf; terraform init; terraform fmt; terraform apply -auto-approve
+simple_clean:
+	source ./sourcepacker.sh; source ./sourceimage.sh; cd simple_tf; terraform init; terraform fmt; terraform destroy -auto-approve
+simple_curl:
+	public_ip=$$(terraform output -state simple_tf/terraform.tfstate -raw public_ip); while sleep 1; do curl $$public_ip; done
 
-clean_test:
-	source ./sourceenv.sh; cd test_tf; terraform init; terraform fmt; terraform destroy -auto-approve
+# roll out to an instance group in production autoscale ---------------
+autoscale: autoscale_apply autoscale_roll
 
-# roll out to an instance group in production ---------------
-prod: prod_apply prod_roll
-
-prod_apply:
-	source ./sourceenv.sh; cd vpc_autoscale_tf; ./apply.sh
-
-prod_roll:
-	source ./sourceenv.sh; cd vpc_autoscale_tf; ./roll.sh
-
-clean_prod:
-	source ./sourceenv.sh; cd vpc_autoscale_tf; ./destroy.sh
+# image name is that last image built by packer
+autoscale_apply:
+	source ./local.env; source ./sourceimage.sh; cd vpc_autoscale_tf; ./apply.sh
+autoscale_roll:
+	source ./local.env; cd vpc_autoscale_tf; ./roll.sh
+autoscale_clean:
+	source ./local.env; cd vpc_autoscale_tf; ./destroy.sh
+autoscale_curl:
+	load_balancer=$$(terraform output -state vpc_autoscale_tf/terraform.tfstate -raw load_balancer_hostname); while sleep 1; do curl $$load_balancer; done

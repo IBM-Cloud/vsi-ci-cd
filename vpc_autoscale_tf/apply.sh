@@ -6,7 +6,7 @@ set -e
 
 terraform init
 terraform fmt
-if current_json="$(terraform output -json current)"; then
+if current_json="$(terraform output -json current 2>/dev/null)"; then
   current=$(jq -r '.current' <<< "$current_json")
   next=$(jq -r '.next' <<< "$current_json")
   image_name_current=$(jq -r '.image_name_current' <<< "$current_json")
