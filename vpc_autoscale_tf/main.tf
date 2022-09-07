@@ -2,7 +2,7 @@
 see variables.tf
 */
 locals {
-  name    = "${var.prefix}-prod"
+  name    = "${var.prefix}-autoscale"
   current = var.current
   next    = 1 - local.current
   state = {

@@ -16,7 +16,6 @@ variable "vsi_base_image_name" {
   default = "ibm-ubuntu-22-04-minimal-amd64-1"
 }
 
-
 locals {
   timestamp = regex_replace(timestamp(), "[- TZ:]", "")
   # version = "1-0-11"
@@ -75,6 +74,4 @@ build {
       image_name = local.image_name
     }
   }
-
 }
-

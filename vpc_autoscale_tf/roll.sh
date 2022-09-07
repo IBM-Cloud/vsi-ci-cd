@@ -1,7 +1,7 @@
 #!/bin/bash
 set -e
 
-ibmcloud login --apikey $IC_API_KEY
+ibmcloud login --apikey $IC_API_KEY -r $TF_VAR_region
 ibmcloud target -r $TF_VAR_region
 instance_group_id=$(terraform output -raw instance_group_id)
 group_membership_json=$(ibmcloud is instance-group-memberships $instance_group_id --output json)

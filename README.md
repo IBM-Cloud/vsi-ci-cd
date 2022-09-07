@@ -20,7 +20,6 @@ Permissions to create resources, including VPC, instances, etc.
 wget https://releases.hashicorp.com/packer/1.8.3/packer_1.8.3_linux_amd64.zip
 unzip packer_1.8.3_linux_amd64.zip
 PATH=`pwd`:$PATH
-tfswitch; # choose 1.2.8
 ```
 
 ## Configure and create
@@ -37,7 +36,12 @@ Use your editor to make the changes described in the comments:
 edit local.env
 ```
 
-Build image.  Deploy to simple and autoscale.
+Terraform 1.2.8 or better is required.  The tfswitch tool will update if installed (it is available on IBM Cloud Shell).  If you do not have this install terraform:
+```
+(cd image_tf && tfswitch)
+```
+
+Build image, deploy to simple and autoscale.
 ```
 make
 ```

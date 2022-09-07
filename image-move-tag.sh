@@ -1,12 +1,10 @@
 #!/bin/bash
 # move the tag by first removing it from all images then adding it to the image provided by TF_VAR_image_name
-set -x
+set -e
 
-tag=$1
-image=$2
-
-ibmcloud login --apikey $IC_API_KEY
 tag=${TF_VAR_prefix}-stage
+
+ibmcloud login --apikey $IC_API_KEY -r $TF_VAR_region
 luceneQuery='service_name:is AND type:image AND tags:"'$tag'"'
 searchJson=$(ibmcloud resource search --output json "$luceneQuery")
 for resourceCrn in $(jq -r '.items|.[].crn' <<< "$searchJson"); do

@@ -4,5 +4,5 @@ data "ibm_resource_group" "group" {
 
 locals {
   resource_group = data.ibm_resource_group.group.id
-  zone = "${var.region}-1"
-} 
+  zone           = "${var.region}-1"
+}

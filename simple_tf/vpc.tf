@@ -20,7 +20,7 @@ locals {
   all_tagged_images_length = length(local.all_tagged_images)
   image_id                 = local.all_tagged_images[0].id
   image_name               = local.all_tagged_images[0].name
-  prefix                   = "${var.prefix}-packertest"
+  name                     = "${var.prefix}-simple"
   profile                  = "cx2-2x4"
 }
 
@@ -41,20 +41,20 @@ data "ibm_is_ssh_key" "ssh_key" {
 }
 
 resource "ibm_is_vpc" "packer" {
-  name                      = local.prefix
+  name                      = local.name
   resource_group            = local.resource_group
   address_prefix_management = "manual"
 }
 
 resource "ibm_is_vpc_address_prefix" "zone" {
-  name = local.prefix
+  name = local.name
   zone = local.zone
   vpc  = ibm_is_vpc.packer.id
   cidr = "10.0.0.0/16"
 }
 
 resource "ibm_is_subnet" "zone" {
-  name            = local.prefix
+  name            = local.name
   resource_group  = local.resource_group
   vpc             = ibm_is_vpc.packer.id
   zone            = ibm_is_vpc_address_prefix.zone.zone
@@ -63,28 +63,27 @@ resource "ibm_is_subnet" "zone" {
 
 resource "ibm_is_subnet_reserved_ip" "instance" {
   subnet = ibm_is_subnet.zone.id
-  name   = local.prefix
+  name   = local.name
   // address = replace(ibm_is_subnet.zone.ipv4_cidr_block, "0/24", "7")
 }
 
-
-resource "ibm_is_security_group" "test_all" {
-  name           = local.prefix
+resource "ibm_is_security_group" "simple_all" {
+  name           = local.name
   resource_group = local.resource_group
   vpc            = ibm_is_vpc.packer.id
 }
 
-resource "ibm_is_security_group_rule" "test_inbound_all" {
-  group     = ibm_is_security_group.test_all.id
+resource "ibm_is_security_group_rule" "simple_inbound_all" {
+  group     = ibm_is_security_group.simple_all.id
   direction = "inbound"
 }
-resource "ibm_is_security_group_rule" "test_outbound_all" {
-  group     = ibm_is_security_group.test_all.id
+resource "ibm_is_security_group_rule" "simple_outbound_all" {
+  group     = ibm_is_security_group.simple_all.id
   direction = "outbound"
 }
 
-resource "ibm_is_instance" "test" {
-  name           = local.prefix
+resource "ibm_is_instance" "simple" {
+  name           = local.name
   image          = local.image_id
   profile        = local.profile
   vpc            = ibm_is_vpc.packer.id
@@ -96,20 +95,20 @@ resource "ibm_is_instance" "test" {
     primary_ip {
       reserved_ip = ibm_is_subnet_reserved_ip.instance.reserved_ip
     }
-    security_groups = [ibm_is_security_group.test_all.id]
+    security_groups = [ibm_is_security_group.simple_all.id]
   }
 }
 resource "ibm_is_floating_ip" "zone" {
-  name           = ibm_is_instance.test.name
-  target         = ibm_is_instance.test.primary_network_interface[0].id
+  name           = ibm_is_instance.simple.name
+  target         = ibm_is_instance.simple.primary_network_interface[0].id
   resource_group = local.resource_group
 }
 
-output "test" {
+output "simple" {
   value = <<-EOT
   curl ${ibm_is_floating_ip.zone.address}
   ssh root@${ibm_is_floating_ip.zone.address}
-  ${ibm_is_instance.test.primary_network_interface[0].primary_ipv4_address} ${ibm_is_instance.test.name}
+  ${ibm_is_instance.simple.primary_network_interface[0].primary_ip[0].address} ${ibm_is_instance.simple.name}
   EOT
 }
 output "public_ip" {

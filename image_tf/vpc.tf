@@ -23,7 +23,7 @@ resource "ibm_is_subnet" "zone" {
 }
 
 
-output packer {
+output "packer" {
   value = <<-EOT
     export PKR_VAR_subnet_id="${ibm_is_subnet.zone.id}"
     export PKR_VAR_resource_group_id="${local.resource_group}"
