@@ -15,17 +15,17 @@ vpc_clean:
 
 # image pipeline with packer -----------------
 image:
-	source local.env; source ./sourcepacker.sh; packer init .; packer build -machine-readable .
+	source ./local.env; source ./sourcepacker.sh; packer init .; packer build -machine-readable .
 tag:
-	source local.env ; source ./sourceimage.sh; ./image-move-tag.sh
+	source ./local.env ; source ./sourceimage.sh; ./image-move-tag.sh
 images_clean:
-	source local.env; ./images-delete.sh
+	source ./local.env; ./images-delete.sh
 
 # simple deploy pipeline: instance in a vpc ------------------------
 simple:
 	source ./local.env; source ./sourceimage.sh; cd simple_tf; terraform init; terraform fmt; terraform apply -auto-approve
 simple_clean:
-	source local.env; source ./sourcepacker.sh; source ./sourceimage.sh; cd simple_tf; terraform init; terraform fmt; terraform destroy -auto-approve
+	source ./local.env; source ./sourcepacker.sh; source ./sourceimage.sh; cd simple_tf; terraform init; terraform fmt; terraform destroy -auto-approve
 simple_curl:
 	public_ip=$$(terraform output -state simple_tf/terraform.tfstate -raw public_ip); while sleep 1; do curl $$public_ip; done
 
