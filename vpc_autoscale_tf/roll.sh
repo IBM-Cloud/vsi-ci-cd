@@ -1,6 +1,9 @@
 #!/bin/bash
 set -e
 
+# Slowly delete each of the members of the instance_group allowing them to be replaced by the
+# new intance_template.
+
 ibmcloud login --apikey $IC_API_KEY -r $TF_VAR_region
 ibmcloud target -r $TF_VAR_region
 instance_group_id=$(terraform output -raw instance_group_id)

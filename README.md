@@ -8,7 +8,7 @@ Companion repository to the blog post: URL
 ![image](https://user-images.githubusercontent.com/6932057/188900788-18736f50-1ffe-4975-929e-cdd5df2b389c.png)
 
 
-# Create the resources
+# Prepare
 
 ## Prerequisites 
 Permissions to create resources, including VPC, instances, etc.
@@ -22,7 +22,7 @@ unzip packer_1.8.3_linux_amd64.zip
 PATH=`pwd`:$PATH
 ```
 
-## Configure and create
+## Configure
 
 Get the source and edit the local.env file
 ```
@@ -41,14 +41,37 @@ Terraform 1.2.8 or better is required.  The tfswitch tool will update if install
 (cd image_tf && tfswitch)
 ```
 
-Build image, deploy to simple and autoscale.
-```
-make
-```
 
 See `make clean` below to remove up all the resources.
 
-## Test via curl
+# make
+Use make to invoke each of the steps that you may want to add to your pipeline, `make x` will execute one of the example steps
+
+## make vpc
+Invoke terraform in the image_tf directory to create a vpc and subnet for packer.  The `terraform output` captures the packer variables.
+```
+make vpc
+```
+
+## make image
+Invoke Packer to create an image.  The image created is recorded in packer-manifest.json see packer docs for details. This step is **Image Pipeline** in the diagram.
+```
+make image
+```
+
+## make tag
+Delete the tag from all images and then add the tag to the latest packer image.  The file packer-manifest.json will be used to identify the latest image.
+```
+make tag
+```
+
+## make simple
+Invoke terraform in the simple_tf directory to create a vpc, subnet and instance with the image just tagged in `make tag`.
+```
+make simple
+```
+
+## Test simple via curl
 Find the public ip address of the simple instance and curl:
 ```
 public_ip=$(terraform output -state simple_tf/terraform.tfstate -raw public_ip)
@@ -56,6 +79,23 @@ echo $public_ip
 while sleep 1; do curl $public_ip; done
 ```
 
+or:
+```
+make simple_curl
+```
+
+## make autoscale
+![image](https://user-images.githubusercontent.com/6932057/188898113-6c9743ce-0590-407c-bc8d-6b16fdf699a3.png)
+
+The autoscale production make target contains two steps, both executed in the vpc_autoscale_tf directory:
+- apply.sh - wrapper around `terraform apply` that juggles two instance_template resources.
+- roll.sh - Slowly delete each of the members of the instance_group allowing them to be replaced by the latest packer image
+
+```
+make autoscale
+```
+
+## Test autoscale via curl
 Find the public DNS name of the load balancer and curl:
 ```
 load_balancer=$(terraform output -state vpc_autoscale_tf/terraform.tfstate -raw load_balancer_hostname)
@@ -63,51 +103,47 @@ echo $load_balancer
 while sleep 1; do curl $load_balancer; done
 ```
 
-The make targets can also be used:
+or:
 ```
-make simple_curl
 make autoscale_curl
 ```
 
-# make
-The default make target executed above is **all** and it perform the following steps:
-1. vpc - Create a new subnet for use by packer (creates a new  VPC as well)
-1. image - Exeuctes packer to create a new image
-1. simple - Deploys the new image on an instance to a simple VPC, you can ssh into the instance and look around
-1. autoscale - Deploys the new image onto production vpc in an instance group
+## make rollout
+Now that everythine is working you can make a change to the image and roll out a new version.  The contents of the image are defined in ubuntu-hello.pkr.hcl look for these sections:
+```
+locals {
+  timestamp = regex_replace(timestamp(), "[- TZ:]", "")
+  version = local.timestamp
+  ...
+}
 
-The next sections describe each target
+  provisioner "shell" {
+    inline = [
+      "set -x",
+      "echo '@reboot echo ${local.version} $(hostname) $(hostname -I) > /var/www/html/index.html' | crontab",
+      ...
+```
 
-# make vpc
-Invoke terraform in the image_tf directory to create a vpc and subnet for packer.  The `terraform output` captures the packer variables.
+The echo is putting a line into the crontab file that is executed on reboot to write some text to index.html.  Evaluating `hostname` and `hostname -I` on the instance during boot provides some info about the VPC instance.  The `${local.version}` is evaluated by packer and is derived from the timestamp at the time packer was run.  Add some code to the echo line like this:
 
-# make image
-Packer to create an image.  The image is recorded in packer-manifest.json see packer docs for details. This is **Image Pipeline** in the diagram.
 
-# make tag
-Delete the tag from all images and then add the tag to the latest packer image.  The file packer-manifest.json will be used to identify the latest image.
+```
+  provisioner "shell" {
+    inline = [
+      "set -x",
+      "echo '@reboot echo FUN ${local.version} $(hostname) $(hostname -I) > /var/www/html/index.html' | crontab",
+      ...
+```
 
-# make simple
-Invoke terraform in the simple_tf directory to create a vpc, subnet and instance with the image just tagged in `make tag`.
+Steps to roll out a new image:
+```
+make image
+make tag
+make simple
+make autoscale
+```
 
-# make autoscale
-![image](https://user-images.githubusercontent.com/6932057/188898113-6c9743ce-0590-407c-bc8d-6b16fdf699a3.png)
+This will create a new image and provision.  Test via curl described above.  You can transfer the `public_ip` and `load_balancer` variables to your laptop computer to watch as the new images are rolled out.
 
-The autoscale production make target has two steps executed in the vpc_autoscale_tf directory:
-- apply.sh
-- roll.sh
-
-**apply.sh** is required to manage the two instance_templates that must be managed for live deployment of the new image.  It is a wrapper around terraform.
-
-**roll.sh** - After the instance_template is initialized with the new image the new instances created will be rolled out.  The roll.sh script will delete the members of the image_group - one every 30 seconds.  This should be long enough to replace it before deleting the next one.
-
-# make rollout
-Steps:
-- make image
-- make simple
-- make prod
-
-This will create a new image and provision.  Use the **Test via curl** scripts above in a different terminal sessions to watch it change over.  You can transfer the public_ip and load_balancer shell variables to your desktop.
-
-# make clean
+## make clean
 Clean up all of the resources.

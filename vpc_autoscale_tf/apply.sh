@@ -1,8 +1,10 @@
 #!/bin/bash
 set -e
 
-# Expect the following variable name to be set
-# TF_VAR_image_name=packer-20220829203907
+# Wrapper around terraform.  It is not possible to simply change the image name.
+# Instead there are two instance_templates and the one currently not in use can be changed 
+# and then assigned to the instance_group.
+# TF_VAR_image_name is in the environment
 
 terraform init
 terraform fmt
