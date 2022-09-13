@@ -1,9 +1,9 @@
 # vsi-ci-cd
+This is a companion repository to the blog post: [Design and Build a Delivery Pipeline for Virtual Server Images](https://www.ibm.com/cloud/blog/design-and-build-a-delivery-pipeline-for-virtual-server-images)
+
 Create an image using packer.  Demonstrate the roll out in two different environments:
 1. simple - vpc with one instance
 2. autoscale - instance group with autoscale configuration
-
-Companion repository to the blog post: URL
 
 ![image](https://user-images.githubusercontent.com/6932057/188900788-18736f50-1ffe-4975-929e-cdd5df2b389c.png)
 
